@@ -230,7 +230,7 @@ void PolinomioPrint( Polinomio* polinomio )
     
 }
 
-double PolinomioNumericValue( Polinomio* polinomio, int x )
+double PolinomioNumericValue( Polinomio* polinomio, double x )
 {
     double result = 0;
     
@@ -481,7 +481,7 @@ int main( int argc , char **argv )
     
     PolinomioPrint( poly ); 
     
-    printf("Valor numerico para P( %d ) = %.0lf",atoi( argv[2] ),PolinomioNumericValue( poly, atoi( argv[2] ) ) );
+    printf("Valor numerico para P( %s ) = %.0lf",argv[2],PolinomioNumericValue( poly, atof( argv[2] ) ) );
     
     return EXIT_SUCCESS;
     
