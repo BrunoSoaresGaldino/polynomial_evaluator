@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <ctype.h>
-
+#include <errno.h>
 
 typedef struct Monomio Monomio;
 
@@ -12,7 +12,7 @@ typedef struct
     Monomio *primeiro;
     Monomio *ultimo;
     
-    int constante;
+    long int constante;
     
     int grau;
     
@@ -22,9 +22,9 @@ typedef struct
 
 struct Monomio
 {   
-    unsigned int expoente;
+    unsigned short int expoente;
     
-    int constante;
+    long int constante;
     
     Monomio *prox;
     
@@ -46,7 +46,7 @@ Polinomio* PolinomioCreate( void )
     
 }
 
-void PolinomioAdd( Polinomio *polinomio , Monomio *monomio )
+void PolinomioInsert( Polinomio *polinomio , Monomio *monomio )
 {   
     
     Monomio *aux;
@@ -257,18 +257,17 @@ bool PolinomioError( Polinomio* polinomio , Monomio *monomio )
     return false;
 }
   
-bool ParsePolinomio(char *input, Polinomio *polinomio )
+bool PolinomioParse(char *input, Polinomio *polinomio )
 {
     
   
     
     char *p = NULL;
+    char *p2 = NULL;
     
-    char sinal = '+';
+    long int constante;
     
-    char aux[101] = "";
-    
-    int i;
+    int sinal = 1;
     
     Monomio *monomio;
  
@@ -284,174 +283,100 @@ bool ParsePolinomio(char *input, Polinomio *polinomio )
             return PolinomioError( polinomio , monomio );
         }
         
-  
-        i = 0;
-        
         while( *p == ' ')
         {
             p++;
         }
         
-        
-        if( *p == '-')
+        if( *p == '-' )
         {
-            sinal = '-';
+            sinal = -1 ;
             p++;
         }
-        else if( *p == '+')
+        else if ( *p == '+' )
         {
-            sinal = '+';
+            sinal = 1;
             p++;
         }
-        
-        while( *p == ' ')
+        else if( p != input )
         {
-            p++;
-        }
-        
-        while( isdigit(*p) ) 
-        {
-            if( i == 100 )
-            {
-                
-                fputs("Constante muito grande",stderr);
-                
-                return PolinomioError( polinomio , monomio );
-                
-            }
-            
-            aux[i++] = *p;
-            
-            p++;
-            
-        }
-        
-        aux[i] = '\0';
-        
-        if( *p == '+' || *p == '-' || *p == '\0')
-        {
-            
-        
-            if( sinal == '-' )
-            {
-                
-                polinomio->constante  -= atoi( aux );
-                
-                continue;
-                
-            }
-            else if( sinal == '+' || isdigit(sinal) )
-            {
-                polinomio->constante  += atoi( aux );
-                
-                continue;
-            }
-            
-        
-        }
-        else if( *p == 'x' || *p == 'X' )
-        {
-           
-           
-            if( i == 0 )// caso não haja uma constante acompanhando a váriavel
-            {
-               
-                if( sinal == '-' )
-                {
-                
-                    monomio->constante = -1;
-                
-                }
-                else
-                {
-
-                    monomio->constante = 1;
-                }   
-                
-            }// i != 0
-            else
-            {
-                if( sinal == '-' )
-                {
-                    monomio->constante = -atoi( aux );
-                }
-                else
-                {
-                    monomio->constante = atoi( aux );
-                }
-            }
-               
-               
-            p++;// avanca depois de encontrado x
-            
-            i = 0;
-        
-            if( *p == '^' )
-            {
-                p++;
-                
-                while( *p == ' ')//ignora espaços
-                {
-                    p++;
-                }
-                
-                while( isdigit( *p ) )
-                {
-                    
-                    if( i == 4 )
-                    {
-                        fputs("expoente muito grande\n",stderr);
-                        
-                        return PolinomioError( polinomio , monomio );
-                    
-                    }
-                    
-                    aux[i++] = *p;
-                    
-                    p++;
-                    
-                }
-                
-                aux[i] = '\0';
-                
-                
-                if( !i || ( *p != '-' && * p != '+' && *p != '\0' && *p != ' ') )
-                {
-                    return PolinomioError( polinomio , monomio );
-                }
-                
-                monomio->expoente = atoi( aux );
-                
-                if( monomio-> expoente > 50 )
-                {
-                    fputs("O expoente nao pode ser maior que 50\n",stderr);
-                    
-                    return PolinomioError( polinomio , monomio );
-                }
-               
-                
-            }// não achou ^
-            else
-            {
-                monomio->expoente = 1;   
-            }
-        
-        
-        }  
-        else
-        {
-            
             return PolinomioError( polinomio , monomio );
         }
-    
+        errno = 0;
         
-        PolinomioAdd( polinomio , monomio );
+        constante = strtol( p,&p2,10);
+        
+        if( errno == ERANGE )
+        {
+           
+            return PolinomioError( polinomio, monomio );
+            
+        }
+        
+        p = p2;
+        
+        while( *p == ' ' )// igonara espaços
+        {
+            p++;
+        }
+        
+        if( *p == 'x' || *p == 'X' )
+        {
+            p++;
+            
+            if( !constante )
+            {
+                constante = sinal;
+            }
+            else
+            {
+                constante *= sinal;
+            }
+        
+            monomio->constante = constante;
+           
+            while( *p == ' ' )
+            {
+                p++;
+            }
+            
+            if( *p == '^' )
+            {   
+                
+                p++;
+                
+                errno = 0;
+                
+                monomio->expoente = ( unsigned short int) strtol( p , &p2 , 10 );
+        
+                if( errno == ERANGE || monomio->expoente > 50 )
+                {  
+                    return PolinomioError( polinomio, monomio );
+                }
+                
+                p = p2;
+                
+            }
+            else 
+            {
+                monomio->expoente = 1;
+            }
+            
+            PolinomioInsert( polinomio , monomio );
+            
+        }
+        else if( *p == '-' || *p == '+' || *p == '\0' )
+        {
+            polinomio->constante += sinal*constante;
+        }
+        else
+        {
+            return PolinomioError( polinomio , monomio ); 
+        }
     
     
     }
-   
-    
-    
+
     
     return true;
    
@@ -471,7 +396,7 @@ int main( int argc , char **argv )
     if( poly )
     {
         
-        if( !ParsePolinomio( argv[1] ,poly ) )
+        if( !PolinomioParse( argv[1] ,poly ) )
         {
             puts("erro ao fazer parse do polinomio");
             exit(EXIT_FAILURE);
@@ -482,6 +407,8 @@ int main( int argc , char **argv )
     PolinomioPrint( poly ); 
     
     printf("Valor numerico para P( %s ) = %.0lf",argv[2],PolinomioNumericValue( poly, atof( argv[2] ) ) );
+    
+    PolinomioDestroy( poly );
     
     return EXIT_SUCCESS;
     
