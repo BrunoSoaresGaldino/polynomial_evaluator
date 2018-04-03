@@ -191,22 +191,8 @@ void PolinomioPrint( Polinomio* polinomio )
     
     while( monomio )
     {
-        if( monomio->constante != 1 && monomio->constante != -1 )
-        {
-            
-            if( monomio-> constante < 0)
-            {
-                printf("%dx^%d ",monomio->constante,monomio->expoente);
-            }
-            else
-            {
-                printf("+%dx^%d ",monomio->constante, monomio->expoente );
-            }
-        }
-        else
-        {
-            printf("%cx^%d " , monomio->constante > 0 ? '+':'-',monomio->expoente);
-        }
+        
+        printf("%+dx^%d ",monomio->constante,monomio->expoente);
         
         monomio = monomio->prox;
     }
